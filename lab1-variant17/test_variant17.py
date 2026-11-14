@@ -10,8 +10,8 @@ from run_variant17 import run, D_MIN
 class Variant17Test(unittest.TestCase):
     def test_main_configuration_meets_requirements(self):
         sim, res = run(use_right_hand=True, use_yield=False)
-        self.assertTrue(res.all_reached, "не всі роботи досягли цілей")
-        self.assertGreaterEqual(res.min_pair, D_MIN, "порушено d_min між роботами")
+        self.assertTrue(res.all_reached, "не всі дрони досягли цілей")
+        self.assertGreaterEqual(res.min_pair, D_MIN, "порушено d_min між дронами")
         self.assertGreaterEqual(res.min_clearance, D_MIN, "порушено d_min до перешкоди")
 
     def test_time_close_to_lower_bound(self):

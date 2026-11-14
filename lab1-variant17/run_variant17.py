@@ -1,5 +1,5 @@
 """
-Лабораторна робота №1, варіант 17.
+Практичне заняття 4 (індивідуальне завдання №1), варіант 17.
 
 Запуск:
     python run_variant17.py            # розрахунок + графіки + таблиця метрик
@@ -25,9 +25,9 @@ from swarm import Params, Simulation
 # ---------------------------------------------------------------------------
 FIELD = (100, 100)
 OBSTACLES = [(50, 50, 20)]                              # (x, y, R)
-MISSIONS = [((5, 5), (95, 95)),                         # Робот 1
-            ((5, 95), (95, 5)),                         # Робот 2
-            ((95, 5), (5, 95))]                         # Робот 3
+MISSIONS = [((5, 5), (95, 95)),                         # Дрон 1
+            ((5, 95), (95, 5)),                         # Дрон 2
+            ((95, 5), (5, 95))]                         # Дрон 3
 D_MIN = 2.0
 COLORS = ["#2b6cb0", "#dd6b20", "#2f855a"]
 OUT = Path(__file__).parent / "results"
@@ -62,7 +62,7 @@ def plot_trajectories(sim, res, path, title):
     idx = [int(round(t / sim.prm.dt)) for t in np.arange(0, res.t[-1], snap_every)]
     for k, c in enumerate(COLORS):
         tr = res.traj[:, k]
-        ax.plot(tr[:, 0], tr[:, 1], "-", color=c, lw=2.4, zorder=4, label=f"Робот {k + 1}")
+        ax.plot(tr[:, 0], tr[:, 1], "-", color=c, lw=2.4, zorder=4, label=f"Дрон {k + 1}")
         ax.plot(*tr[0], "o", color=c, ms=9, mec="white", zorder=6)           # старт
         ax.plot(*sim.drones[k].goal, "x", color=c, ms=11, mew=3, zorder=6)    # ціль
         for i in idx[1:]:
@@ -78,16 +78,16 @@ def plot_trajectories(sim, res, path, title):
 def plot_distances(res, path):
     fig, (a1, a2) = plt.subplots(2, 1, figsize=(8, 7), dpi=200, sharex=True)
     for (i, j), d in res.pair_dist.items():
-        a1.plot(res.t, d, lw=1.8, label=f"Роботи {i}-{j}")
+        a1.plot(res.t, d, lw=1.8, label=f"Дрони {i}-{j}")
     a1.axhline(D_MIN, color="red", ls="--", label=f"d_min = {D_MIN:g} м")
-    a1.set_ylabel("Відстань між роботами, м"); a1.set_ylim(0, 60)
-    a1.set_title("Відстані між роботами", fontsize=10, fontweight="bold")
+    a1.set_ylabel("Відстань між дронами, м"); a1.set_ylim(0, 60)
+    a1.set_title("Відстані між дронами", fontsize=10, fontweight="bold")
     a2.axhline(D_MIN, color="red", ls="--", label=f"d_min = {D_MIN:g} м")
     for k, c in enumerate(COLORS):
-        a2.plot(res.t, res.obs_clear[:, k], color=c, lw=1.8, label=f"Робот {k + 1}")
+        a2.plot(res.t, res.obs_clear[:, k], color=c, lw=1.8, label=f"Дрон {k + 1}")
     a2.set_ylabel("Щілина до краю перешкоди, м"); a2.set_xlabel("Час, с")
     a2.set_ylim(0, 40)
-    a2.set_title("Відстань від центра робота до краю перешкоди", fontsize=10, fontweight="bold")
+    a2.set_title("Відстань від центра дрона до краю перешкоди", fontsize=10, fontweight="bold")
     for a in (a1, a2):
         a.grid(True, ls="--", alpha=0.4); a.legend(fontsize=8, loc="upper right")
     fig.tight_layout(); fig.savefig(path); plt.close(fig)
@@ -127,7 +127,7 @@ def summarize(label, sim, res):
         "all_reached": bool(res.all_reached),
         "finish_times_s": [None if f is None else round(float(f), 1) for f in res.finish_times],
         "makespan_s": None if not res.all_reached else round(float(res.makespan), 1),
-        "min_robot_robot_m": round(res.min_pair, 2),
+        "min_drone_drone_m": round(res.min_pair, 2),
         "min_clearance_to_obstacle_m": round(res.min_clearance, 2),
         "wait_steps": res.wait_steps,
         "path_lengths_m": [round(x, 1) for x in res.path_lengths],
@@ -166,9 +166,9 @@ def main(make_animation):
                                       encoding="utf-8")
 
     # ---- таблиця у консоль ----
-    print(f"{'Конфігурація':42s} {'T, с':>6s} {'min роб-роб':>12s} {'min до перешк.':>15s}  d_min")
+    print(f"{'Конфігурація':42s} {'T, с':>6s} {'min дрон-дрон':>12s} {'min до перешк.':>15s}  d_min")
     for r in rows:
-        print(f"{r['config']:42s} {r['makespan_s']!s:>6s} {r['min_robot_robot_m']:>12.2f} "
+        print(f"{r['config']:42s} {r['makespan_s']!s:>6s} {r['min_drone_drone_m']:>12.2f} "
               f"{r['min_clearance_to_obstacle_m']:>15.2f}  {'OK' if r['d_min_ok'] else 'ПОРУШЕНО'}")
     main_row = rows[1]
     print("\nОсновна конфігурація:")

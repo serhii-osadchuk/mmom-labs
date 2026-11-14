@@ -40,7 +40,7 @@ def main():
         ok = sum(r["ok"] for r in rows)
         Ts = [r["T"] for r in rows]
         print(f"{name:7s}: успішних {ok}/{len(rows)}, T = {min(Ts)}..{max(Ts)} с, "
-              f"min між роботами = {min(r['min_pair'] for r in rows)} м, "
+              f"min між дронами = {min(r['min_pair'] for r in rows)} м, "
               f"min до перешкоди = {min(r['min_clear'] for r in rows)} м")
 
 

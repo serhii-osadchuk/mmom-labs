@@ -8,7 +8,7 @@
       68.9
     ],
     "makespan_s": 89.8,
-    "min_robot_robot_m": 2.47,
+    "min_drone_drone_m": 2.47,
     "min_clearance_to_obstacle_m": 2.48,
     "wait_steps": [
       0,
@@ -36,7 +36,7 @@
       68.8
     ],
     "makespan_s": 69.3,
-    "min_robot_robot_m": 3.04,
+    "min_drone_drone_m": 3.04,
     "min_clearance_to_obstacle_m": 2.94,
     "wait_steps": [
       0,
@@ -64,7 +64,7 @@
       79.0
     ],
     "makespan_s": 79.0,
-    "min_robot_robot_m": 2.25,
+    "min_drone_drone_m": 2.25,
     "min_clearance_to_obstacle_m": 2.26,
     "wait_steps": [
       0,
@@ -92,7 +92,7 @@
       71.4
     ],
     "makespan_s": 71.4,
-    "min_robot_robot_m": 3.15,
+    "min_drone_drone_m": 3.15,
     "min_clearance_to_obstacle_m": 3.25,
     "wait_steps": [
       0,
