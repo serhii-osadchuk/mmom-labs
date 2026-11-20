@@ -1,0 +1,281 @@
+# Автор: Осадчук Сергій, аспірант 1 року навчання (спеціальність G7), ЗУНУ, Тернопіль
+# Дисципліна: «Математичне моделювання та обчислювальні методи»
+# Практичне заняття 3 (PN-Supervisor / ABM-Executors), варіант 17. 2026 р.
+#
+# Код створено на основі прототипу з файлу Prakt_6_1_2General+.pdf (папка original/).
+# Структура прототипу збережена (PetriNetSupervisor, AMRAgent, run_production_simulation);
+# усі відмінності перелічено в CHANGES.md і в results/changes.diff.
+#
+# ВАРІАНТ 17: 3 AMR, 3 верстати, 2-місний паралельний проїзд (K = 2),
+#             v_max = 1.1 м/с, межі критичної зони [6.0; 15.0] м, T_proc = 8.0 с.
+import re
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+# =====================================================================
+# 0. ПАРАМЕТРИ ВАРІАНТА (єдине місце, яке змінюється для іншого варіанта)
+# =====================================================================
+N_AMR = 3                    # кількість мобільних роботів (було 2)
+N_MACHINES = 3               # кількість верстатів         (було 2)
+CZ_CAPACITY = 2              # місткість критичної зони K  (було 1)
+V_MAX = 1.1                  # м/с                         (було 1.2)
+CZ_ENTRY_X, CZ_EXIT_X = 6.0, 15.0   # межі критичної зони (було 8.0 і 16.0)
+T_PROC = 8.0                 # час обробки на верстаті, с  (у прототипі не було)
+T_END = 45.0                 # тривалість симуляції, с     (було 22 с)
+DT = 0.1
+SNAPSHOT_TIMES = [0.0, 5.6, 13.0, 21.0, 30.0, 45.0]   # кадри для звіту (None - не зберігати)
+SNAPSHOT_PREFIX = None       # напр. "results/snapshot" - тоді зберігаються PNG
+
+# =====================================================================
+# 1. КОМПОНЕНТ 1: PN-SUPERVISOR (МЕРЕЖА ПЕТРІ)
+# =====================================================================
+class PetriNetSupervisor:
+    def __init__(self, n=N_AMR, cz_capacity=CZ_CAPACITY):
+        #Позначення:
+        #AMRk = мобільні роботи, Mk – верстати, CZ – критична зона
+        # Позиції (вектор маркування M), n - кількість роботів/верстатів:
+        # 0:        p_CZ_free      (кількість вільних місць у проході, початково K)
+        # 1..n:     p_Mk_free      (1 - верстат Mk вільний)
+        # n+1..2n:  p_AMRk_in_CZ   (1 - AMRk у критичній зоні)
+        # 2n+1..3n: p_Mk_working   (1 - Mk обробляє деталь від AMRk)
+        # 3n+1..4n: p_Mk_done      (кількість оброблених деталей на Mk)
+        self.n = n
+        self.M = np.zeros(1 + 4 * n, dtype=int)
+        self.M[0] = cz_capacity
+        for k in range(1, n + 1):
+            self.M[self.i_free(k)] = 1
+        self.now = 0.0          # поточний час (задається симуляцією, для журналу)
+        self.log = []           # журнал: (час, перехід, маркування після переходу)
+
+    # індекси позицій для робота/верстата з номером k
+    def i_free(self, k):  return k
+    def i_in_cz(self, k): return self.n + k
+    def i_work(self, k):  return 2 * self.n + k
+    def i_done(self, k):  return 3 * self.n + k
+
+    @staticmethod
+    def parse(transition_id):
+        # 't_enter_CZ_AMR2' -> ('enter', 2);  't_finish_M3' -> ('finish', 3)
+        m = re.fullmatch(r't_(enter_CZ|exit_CZ|finish)_(?:AMR|M)(\d+)', transition_id)
+        return (m.group(1), int(m.group(2))) if m else (None, None)
+
+    def can_trigger(self, transition_id):
+        kind, k = self.parse(transition_id)
+        if kind == 'enter_CZ':   # потрібне вільне місце в CZ та вільний верстат Mk
+            return self.M[0] >= 1 and self.M[self.i_free(k)] == 1
+        elif kind == 'exit_CZ':  # потрібно щоб робот k був у критичній зоні
+            return self.M[self.i_in_cz(k)] == 1
+        elif kind == 'finish':   # потрібно щоб верстат Mk працював
+            return self.M[self.i_work(k)] == 1
+        return False
+
+    def trigger(self, transition_id):
+        if not self.can_trigger(transition_id):  # перехід не допустимий – ніяких дій
+            return False
+        kind, k = self.parse(transition_id)
+        if kind == 'enter_CZ':    # захід робота k в критичну зону
+            self.M[0] -= 1                       # Займаємо місце в CZ
+            self.M[self.i_in_cz(k)] += 1         # AMRk в CZ
+        elif kind == 'exit_CZ':   # вихід робота k з критичної зони
+            self.M[self.i_in_cz(k)] -= 1         # Виходимо з CZ
+            self.M[0] += 1                       # Звільняємо місце в CZ
+            self.M[self.i_free(k)] -= 1          # Займаємо Mk
+            self.M[self.i_work(k)] += 1          # Mk працює
+        elif kind == 'finish':    # завершення обробки на верстаті k
+            self.M[self.i_work(k)] -= 1          # Mk перестає працювати
+            self.M[self.i_free(k)] += 1          # Mk знову вільний
+            self.M[self.i_done(k)] += 1          # +1 оброблена деталь
+        self.log.append((self.now, transition_id, self.M.copy()))
+        return True
+
+# =====================================================================
+# 2. КОМПОНЕНТ 2: ABM-EXECUTOR (АГЕНТНИЙ РОБОТ)
+# =====================================================================
+class AMRAgent:
+    def __init__(self, agent_id, start_pos, target_m1_m2, color, v_max=V_MAX, t_proc=T_PROC):
+        self.id = agent_id
+        self.pos = np.array(start_pos, dtype=float)
+        self.target = np.array(target_m1_m2, dtype=float)
+        self.color = color
+        self.v_max = v_max
+        self.radius = 0.6
+        self.t_proc = t_proc          # час обробки на верстаті
+        self.proc_timer = 0.0
+
+        # Стани агента: 'APPROACHING_CZ', 'WAITING_PERMIT', 'IN_CZ', 'GOING_TO_MACHINE',
+        # 'AT_MACHINE' (іде обробка), 'DONE' (обробка завершена)
+        self.state = 'APPROACHING_CZ'
+        self.path_history = [self.pos.copy()]
+        self.wait_time = 0.0          # скільки чекав дозволу (для аналізу)
+
+    def update_motion(self, cz_entry_x, cz_exit_x, supervisor, dt=0.1):
+        if self.state == 'DONE':
+            return
+        if self.state == 'AT_MACHINE':          # верстат обробляє деталь T_proc секунд
+            self.proc_timer -= dt
+            if self.proc_timer <= 0:
+                supervisor.trigger(f't_finish_M{self.id}')
+                self.state = 'DONE'
+            return
+        # Визначення поточного цільового вектору руху
+        if self.state in ['APPROACHING_CZ', 'WAITING_PERMIT']:
+            # Прямуємо до входу у вузький прохід
+            target_pt = np.array([cz_entry_x, self.pos[1]])
+
+            # Перевірка наближення до геозони входу в CZ
+            if abs(self.pos[0] - cz_entry_x) < 0.4:
+                self.state = 'WAITING_PERMIT'
+                t_req = f't_enter_CZ_AMR{self.id}'
+                if supervisor.can_trigger(t_req):
+                    supervisor.trigger(t_req)
+                    self.state = 'IN_CZ'
+        elif self.state == 'IN_CZ':
+            # Рух через вузький прохід до виходу
+            target_pt = np.array([cz_exit_x, self.pos[1]])
+
+            # Перевірка виходу з CZ
+            if abs(self.pos[0] - cz_exit_x) < 0.4:
+                t_exit = f't_exit_CZ_AMR{self.id}'
+                supervisor.trigger(t_exit)
+                self.state = 'GOING_TO_MACHINE'
+        elif self.state == 'GOING_TO_MACHINE':
+            target_pt = self.target
+            if np.linalg.norm(self.pos - self.target) < 0.5:
+                self.state = 'AT_MACHINE'
+                self.proc_timer = self.t_proc
+
+        # Якщо чекаємо дозвіл від Мережі Петрі - стоїмо на місці
+        if self.state == 'WAITING_PERMIT':
+            vel = np.zeros(2)
+            self.wait_time += dt
+        elif self.state == 'AT_MACHINE':
+            vel = np.zeros(2)
+        else:
+            dir_vec = target_pt - self.pos
+            norm = np.linalg.norm(dir_vec)
+            if norm > 0.05:
+                vel = (dir_vec / norm) * self.v_max
+            else:
+                vel = np.zeros(2)
+
+        self.pos += vel * dt
+        self.path_history.append(self.pos.copy())
+
+# =====================================================================
+# 3. СИМУЛЯЦІЙНЕ СЕРЕДОВИЩЕ ТА ВІЗУАЛІЗАЦІЯ
+# =====================================================================
+COLORS = ['blue', 'magenta', 'orange', 'teal', 'brown']
+
+
+def check_invariants(supervisor):
+    """Перевірка властивостей мережі за журналом: безпека (не більше K у CZ) та завершеність."""
+    n, K = supervisor.n, CZ_CAPACITY
+    ok_cz = all(m[0] + sum(m[supervisor.i_in_cz(k)] for k in range(1, n + 1)) == K and m[0] >= 0
+                for _, _, m in supervisor.log)
+    max_in_cz = max(sum(m[supervisor.i_in_cz(k)] for k in range(1, n + 1)) for _, _, m in supervisor.log)
+    done = all(supervisor.M[supervisor.i_done(k)] == 1 for k in range(1, n + 1))
+    return ok_cz, max_in_cz, done
+
+
+def run_production_simulation():
+    supervisor = PetriNetSupervisor()
+
+    # Геометрія виробничої дільниці (метри)
+    # Вузький прохід (Критична зона) від X = CZ_ENTRY_X до X = CZ_EXIT_X
+    cz_entry_x = CZ_ENTRY_X
+    cz_exit_x = CZ_EXIT_X
+
+    # Верстати розташовані за критичною зоною (по одному на кожен "коридор" y)
+    lane_y = [6.0, 4.0, 2.0]
+    m_pos = [[22.0, y] for y in lane_y[:N_MACHINES]]
+
+    # Створення роботів AMR_1..AMR_n; кожний наступний стартує трохи далі
+    amrs = [AMRAgent(agent_id=k + 1, start_pos=[1.0 - 0.5 * k, lane_y[k]],
+                     target_m1_m2=m_pos[k], color=COLORS[k]) for k in range(N_AMR)]
+
+    dt = DT
+    steps = int(round(T_END / dt))
+    snap_steps = {int(round(t / dt)) for t in SNAPSHOT_TIMES} if SNAPSHOT_PREFIX else set()
+
+    # Налаштування візуалізації Matplotlib
+    fig, (ax_map, ax_pn) = plt.subplots(2, 1, figsize=(11, 8), gridspec_kw={'height_ratios': [2, 1]})
+    plt.ion()
+
+    for step in range(steps + 1):
+        supervisor.now = step * dt
+        # Оновлення агентури
+        for amr in amrs:
+            amr.update_motion(cz_entry_x, cz_exit_x, supervisor, dt)
+
+        if step % 2 == 0 or step in snap_steps:  # Оновлюємо кадр кожні 0.2 сек
+            ax_map.clear()
+            ax_pn.clear()
+
+            # --- ГРАФІК 1: КАРТА ВИРОБНИЧОЇ ДІЛЬНИЦІ ---
+            ax_map.set_xlim(-2, 26)
+            ax_map.set_ylim(-1, 9)
+            ax_map.set_aspect('equal')
+            ax_map.grid(True, linestyle='--', alpha=0.5)
+            ax_map.set_title(f"Виробнича дільниця [Крок {step} | t = {step*dt:.1f}s]", fontsize=11, fontweight='bold')
+
+            # Малювання Стін та Вузького Проходу (Критична Зона)
+            # Верхня та нижня стіни проходу
+            ax_map.add_patch(patches.Rectangle((cz_entry_x, 7.2), cz_exit_x - cz_entry_x, 1.8, color='gray', alpha=0.3))
+            ax_map.add_patch(patches.Rectangle((cz_entry_x, 0.0), cz_exit_x - cz_entry_x, 0.8, color='gray', alpha=0.3))
+
+            # Позначення критичної зони
+            cz_box = patches.Rectangle((cz_entry_x, 0.8), cz_exit_x - cz_entry_x, 6.4,
+                                       linewidth=2, edgecolor='red', facecolor='none', linestyle='--',
+                                       label=f'Критична Зона (CZ), K={CZ_CAPACITY}')
+            ax_map.add_patch(cz_box)
+
+            # Верстати M1..Mn
+            for k, mp in enumerate(m_pos):
+                ax_map.add_patch(patches.Rectangle((mp[0]-1, mp[1]-1), 2, 2, color='darkgreen', alpha=0.7))
+                ax_map.text(mp[0], mp[1], f"Верстат M{k+1}", color='white', ha='center', va='center', fontweight='bold')
+
+            # Малювання траєкторій та роботів
+            for amr in amrs:
+                pts = np.array(amr.path_history)
+                ax_map.plot(pts[:, 0], pts[:, 1], color=amr.color, linestyle='-', alpha=0.6, linewidth=2)
+
+                # Малювання корпуса робота
+                circle = plt.Circle(amr.pos, amr.radius, color=amr.color, alpha=0.85)
+                ax_map.add_patch(circle)
+                ax_map.text(amr.pos[0], amr.pos[1] + 0.9, f"AMR_{amr.id} [{amr.state[:4]}]",
+                            color=amr.color, fontsize=7, ha='center', va='center', fontweight='bold')
+
+            ax_map.legend(loc='upper left', fontsize=8)
+
+            # --- ГРАФІК 2: МОНІТОР СТАНУ МЕРЕЖІ ПЕТРІ (PN-SUPERVISOR) ---
+            ax_pn.set_xlim(0, 10)
+            ax_pn.set_ylim(0, 4)
+            ax_pn.axis('off')
+            ax_pn.set_title("Поточний стан ресурсів PN-Supervisor (Маркіровка M)", fontsize=10, fontweight='bold')
+
+            # Індикатори фішок Мережі Петрі
+            tokens_info = [(1.5, 2.0, f"p_CZ_free\n[{supervisor.M[0]}]",
+                            'green' if supervisor.M[0] else 'red')]
+            for k in range(1, N_AMR + 1):
+                y = 3.2 - 0.9 * (k - 1)
+                v_in = supervisor.M[supervisor.i_in_cz(k)]
+                v_w = supervisor.M[supervisor.i_work(k)]
+                tokens_info.append((4.2, y, f"p_AMR{k}_in_CZ\n[{v_in}]", COLORS[k-1] if v_in else 'gray'))
+                tokens_info.append((7.6, y, f"p_M{k}_work\n[{v_w}]", 'darkgreen' if v_w else 'gray'))
+
+            for x, y, label, col in tokens_info:
+                c = plt.Circle((x, y), 0.4, color=col, alpha=0.8)
+                ax_pn.add_patch(c)
+                ax_pn.text(x, y, label, color='white', ha='center', va='center', fontsize=7, fontweight='bold')
+
+            plt.pause(0.01)
+            if step in snap_steps:
+                fig.savefig(f"{SNAPSHOT_PREFIX}_t{step*dt:04.1f}.png", dpi=130)
+    plt.ioff()
+    plt.show()
+    return supervisor, amrs
+
+
+if __name__ == "__main__":
+    run_production_simulation()
