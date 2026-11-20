@@ -50,4 +50,4 @@ python -m unittest -v             # автотест
 
 У `astar_apf_variant17.py` змінюється лише секція «0. ДАНІ ВАРІАНТА»: `GRID_SIZE`, `OBSTACLES`, `STARTS`, `GOALS`, `D_MIN`.
 Правки C2–C6 від варіанта не залежать, але параметри відштовхування варто перевірити `python sensitivity.py`
-(для іншої геометрії можуть знадобитись інші `r_safe`, `k_rep`, `k_right`). Порядок дій: [WORKFLOW.md](../WORKFLOW.md).
+(для іншої геометрії можуть знадобитись інші `r_safe`, `k_rep`, `k_right`).
