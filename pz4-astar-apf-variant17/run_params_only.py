@@ -12,12 +12,13 @@ import matplotlib.pyplot as plt
 HERE = Path(__file__).parent
 src = (HERE / "original" / "astar_apf_original.py").read_text(encoding="utf-8")
 
-# Єдині підстановки (дані варіанта 17 із Prakt_4_2_var21+++.pdf):
+# Єдині підстановки (дані варіанта 17 із Prakt_4_2_var21.pdf):
 subs = [
-    ("(20, 20, 4.0),\n    (30, 28, 5.0),\n    (15, 35, 3.5)", "(22, 20, 6.0),\n    (27, 30, 5.0),\n    (14, 32, 4.5)"),
-    ("starts = [[5.0, 5.0], [5.0, 40.0], [40.0, 5.0]]", "starts = [[5.0, 8.0], [8.0, 45.0], [45.0, 8.0]]"),
-    ("goals = [[45.0, 45.0], [45.0, 10.0], [10.0, 45.0]]", "goals = [[45.0, 42.0], [42.0, 5.0], [8.0, 45.0]]"),
-    ("AStarPlanner(grid_size, obstacles)", "AStarPlanner(grid_size, obstacles, safety_margin=1.1)"),
+    ("grid_size = (50, 50)", "grid_size = (100, 100)"),
+    ("(20, 20, 4.0),\n    (30, 28, 5.0),\n    (15, 35, 3.5)", "(50, 50, 20.0)"),
+    ("starts = [[5.0, 5.0], [5.0, 40.0], [40.0, 5.0]]", "starts = [[5.0, 5.0], [5.0, 95.0], [95.0, 5.0]]"),
+    ("goals = [[45.0, 45.0], [45.0, 10.0], [10.0, 45.0]]", "goals = [[95.0, 95.0], [95.0, 5.0], [5.0, 95.0]]"),
+    ("AStarPlanner(grid_size, obstacles)", "AStarPlanner(grid_size, obstacles, safety_margin=2.0)"),
 ]
 for old, new in subs:
     assert src.count(old) == 1, old
@@ -39,5 +40,5 @@ H = [np.array(d.history) for d in drones]
 n = min(len(h) for h in H)
 pair = min(float(np.linalg.norm(H[i][:n] - H[j][:n], axis=1).min()) for i in range(3) for j in range(i + 1, 3))
 clear = min(float(np.hypot(h[:, 0] - ox, h[:, 1] - oy).min() - r) for h in H for ox, oy, r in obstacles)
-print(f"Мін. відстань між дронами: {pair:.2f} м; мін. просвіт до перешкоди: {clear:.2f} м (вимога r_safety = 1.1 м)")
+print(f"Мін. відстань між дронами: {pair:.2f} м; мін. просвіт до перешкоди: {clear:.2f} м (вимога d_min = 2.0 м)")
 print("Кадр збережено:", out)

@@ -1,149 +1,248 @@
 {
   "margin": {
-    "1.1": {
-      "makespan_s": 51.4,
+    "2.0": {
       "t_arrive_s": [
-        48.8,
-        51.0,
-        51.4
+        119.0,
+        121.0,
+        119.4
       ],
-      "min_pair_m": 1.16,
-      "min_clearance_m": 0.67,
+      "makespan_s": 121.0,
+      "min_pair_m": 2.42,
+      "min_clearance_m": 1.24,
       "success": false
     },
-    "1.5": {
-      "makespan_s": 53.8,
-      "t_arrive_s": [
-        48.0,
-        53.8,
-        52.2
-      ],
-      "min_pair_m": 1.16,
-      "min_clearance_m": 1.48,
-      "success": true
-    },
-    "2.1": {
-      "makespan_s": 51.4,
-      "t_arrive_s": [
-        48.2,
-        51.4,
-        50.0
-      ],
-      "min_pair_m": 1.18,
-      "min_clearance_m": 1.66,
-      "success": true
-    },
     "2.5": {
-      "makespan_s": 51.6,
       "t_arrive_s": [
-        48.6,
-        51.6,
-        50.6
+        119.2,
+        121.0,
+        119.2
       ],
-      "min_pair_m": 1.17,
-      "min_clearance_m": 2.02,
+      "makespan_s": 121.0,
+      "min_pair_m": 2.43,
+      "min_clearance_m": 1.44,
+      "success": false
+    },
+    "3.0": {
+      "t_arrive_s": [
+        119.6,
+        121.8,
+        122.2
+      ],
+      "makespan_s": 122.2,
+      "min_pair_m": 2.35,
+      "min_clearance_m": 2.14,
+      "success": true
+    },
+    "4.0": {
+      "t_arrive_s": [
+        120.4,
+        122.2,
+        120.4
+      ],
+      "makespan_s": 122.2,
+      "min_pair_m": 2.43,
+      "min_clearance_m": 2.85,
       "success": true
     }
   },
   "repulsion": {
-    "r_safe=2.5, k_rep=3.0": {
-      "makespan_s": 51.4,
+    "r_safe=2.5, k_rep=3.0, k_right=0.0": {
       "t_arrive_s": [
-        48.2,
-        51.4,
-        50.0
+        120.4,
+        124.0,
+        122.0
       ],
-      "min_pair_m": 1.18,
-      "min_clearance_m": 1.66,
+      "makespan_s": 124.0,
+      "min_pair_m": 1.16,
+      "min_clearance_m": 2.56,
+      "success": false
+    },
+    "r_safe=2.5, k_rep=3.0, k_right=10.0": {
+      "t_arrive_s": [
+        119.8,
+        120.4,
+        119.4
+      ],
+      "makespan_s": 120.4,
+      "min_pair_m": 1.49,
+      "min_clearance_m": 2.56,
+      "success": false
+    },
+    "r_safe=2.5, k_rep=12.0, k_right=0.0": {
+      "t_arrive_s": [
+        121.4,
+        125.8,
+        122.4
+      ],
+      "makespan_s": 125.8,
+      "min_pair_m": 1.74,
+      "min_clearance_m": 2.46,
+      "success": false
+    },
+    "r_safe=2.5, k_rep=12.0, k_right=10.0": {
+      "t_arrive_s": [
+        119.2,
+        120.8,
+        119.4
+      ],
+      "makespan_s": 120.8,
+      "min_pair_m": 1.82,
+      "min_clearance_m": 2.34,
+      "success": false
+    },
+    "r_safe=2.5, k_rep=40.0, k_right=0.0": {
+      "t_arrive_s": [
+        null,
+        null,
+        119.0
+      ],
+      "makespan_s": 119.0,
+      "min_pair_m": 2.15,
+      "min_clearance_m": 3.13,
+      "success": false
+    },
+    "r_safe=2.5, k_rep=40.0, k_right=10.0": {
+      "t_arrive_s": [
+        119.4,
+        122.0,
+        120.2
+      ],
+      "makespan_s": 122.0,
+      "min_pair_m": 2.16,
+      "min_clearance_m": 2.05,
       "success": true
     },
-    "r_safe=2.5, k_rep=6.0": {
-      "makespan_s": 52.0,
+    "r_safe=4.5, k_rep=3.0, k_right=0.0": {
       "t_arrive_s": [
-        48.2,
-        52.0,
-        50.6
+        120.8,
+        125.0,
+        122.4
       ],
-      "min_pair_m": 1.46,
-      "min_clearance_m": 1.53,
+      "makespan_s": 125.0,
+      "min_pair_m": 1.33,
+      "min_clearance_m": 2.58,
+      "success": false
+    },
+    "r_safe=4.5, k_rep=3.0, k_right=10.0": {
+      "t_arrive_s": [
+        122.2,
+        121.2,
+        119.6
+      ],
+      "makespan_s": 122.2,
+      "min_pair_m": 1.92,
+      "min_clearance_m": 2.31,
+      "success": false
+    },
+    "r_safe=4.5, k_rep=12.0, k_right=0.0": {
+      "t_arrive_s": [
+        null,
+        null,
+        119.0
+      ],
+      "makespan_s": 119.0,
+      "min_pair_m": 2.24,
+      "min_clearance_m": 3.13,
+      "success": false
+    },
+    "r_safe=4.5, k_rep=12.0, k_right=10.0": {
+      "t_arrive_s": [
+        119.6,
+        121.8,
+        122.2
+      ],
+      "makespan_s": 122.2,
+      "min_pair_m": 2.35,
+      "min_clearance_m": 2.14,
       "success": true
     },
-    "r_safe=2.5, k_rep=12.0": {
-      "makespan_s": 52.8,
+    "r_safe=4.5, k_rep=40.0, k_right=0.0": {
       "t_arrive_s": [
-        48.2,
-        52.8,
-        51.2
+        null,
+        null,
+        119.0
       ],
-      "min_pair_m": 1.75,
-      "min_clearance_m": 1.41,
+      "makespan_s": 119.0,
+      "min_pair_m": 3.16,
+      "min_clearance_m": 3.13,
+      "success": false
+    },
+    "r_safe=4.5, k_rep=40.0, k_right=10.0": {
+      "t_arrive_s": [
+        119.4,
+        null,
+        null
+      ],
+      "makespan_s": 119.4,
+      "min_pair_m": 3.17,
+      "min_clearance_m": 1.58,
+      "success": false
+    },
+    "r_safe=8.0, k_rep=3.0, k_right=0.0": {
+      "t_arrive_s": [
+        121.0,
+        125.6,
+        122.6
+      ],
+      "makespan_s": 125.6,
+      "min_pair_m": 1.44,
+      "min_clearance_m": 2.55,
+      "success": false
+    },
+    "r_safe=8.0, k_rep=3.0, k_right=10.0": {
+      "t_arrive_s": [
+        135.6,
+        140.6,
+        125.8
+      ],
+      "makespan_s": 140.6,
+      "min_pair_m": 1.85,
+      "min_clearance_m": 2.39,
+      "success": false
+    },
+    "r_safe=8.0, k_rep=12.0, k_right=0.0": {
+      "t_arrive_s": [
+        null,
+        null,
+        119.2
+      ],
+      "makespan_s": 119.2,
+      "min_pair_m": 2.58,
+      "min_clearance_m": 3.13,
+      "success": false
+    },
+    "r_safe=8.0, k_rep=12.0, k_right=10.0": {
+      "t_arrive_s": [
+        129.2,
+        139.8,
+        126.8
+      ],
+      "makespan_s": 139.8,
+      "min_pair_m": 2.73,
+      "min_clearance_m": 2.1,
       "success": true
     },
-    "r_safe=3.5, k_rep=3.0": {
-      "makespan_s": 51.6,
+    "r_safe=8.0, k_rep=40.0, k_right=0.0": {
       "t_arrive_s": [
-        48.2,
-        51.6,
-        50.2
+        null,
+        null,
+        119.4
       ],
-      "min_pair_m": 1.29,
-      "min_clearance_m": 1.6,
-      "success": true
+      "makespan_s": 119.4,
+      "min_pair_m": 4.03,
+      "min_clearance_m": 3.13,
+      "success": false
     },
-    "r_safe=3.5, k_rep=6.0": {
-      "makespan_s": 52.6,
+    "r_safe=8.0, k_rep=40.0, k_right=10.0": {
       "t_arrive_s": [
-        48.2,
-        52.6,
-        51.2
+        119.4,
+        null,
+        null
       ],
-      "min_pair_m": 1.65,
-      "min_clearance_m": 1.44,
-      "success": true
-    },
-    "r_safe=3.5, k_rep=12.0": {
-      "makespan_s": 54.0,
-      "t_arrive_s": [
-        48.2,
-        54.0,
-        52.4
-      ],
-      "min_pair_m": 2.05,
-      "min_clearance_m": 1.26,
-      "success": true
-    },
-    "r_safe=4.5, k_rep=3.0": {
-      "makespan_s": 52.0,
-      "t_arrive_s": [
-        48.2,
-        52.0,
-        50.4
-      ],
-      "min_pair_m": 1.36,
-      "min_clearance_m": 1.56,
-      "success": true
-    },
-    "r_safe=4.5, k_rep=6.0": {
-      "makespan_s": 53.0,
-      "t_arrive_s": [
-        48.2,
-        53.0,
-        51.4
-      ],
-      "min_pair_m": 1.77,
-      "min_clearance_m": 1.38,
-      "success": true
-    },
-    "r_safe=4.5, k_rep=12.0": {
-      "makespan_s": 54.8,
-      "t_arrive_s": [
-        48.2,
-        54.8,
-        53.2
-      ],
-      "min_pair_m": 2.25,
-      "min_clearance_m": 1.15,
-      "success": true
+      "makespan_s": 119.4,
+      "min_pair_m": 4.09,
+      "min_clearance_m": 0.89,
+      "success": false
     }
   }
 }

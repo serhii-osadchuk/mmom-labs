@@ -1,19 +1,19 @@
 {
   "variant": 17,
   "t_arrive_s": [
-    48.2,
-    51.4,
-    50.0
+    119.6,
+    121.8,
+    122.2
   ],
-  "makespan_s": 51.4,
+  "makespan_s": 122.2,
   "astar_len_m": [
-    60.53,
-    62.87,
-    61.11
+    146.61,
+    146.61,
+    146.61
   ],
-  "min_pair_m": 1.182,
-  "min_clearance_m": 1.659,
-  "r_safety": 1.1,
-  "planner_margin": 2.1,
+  "min_pair_m": 2.346,
+  "min_clearance_m": 2.138,
+  "d_min": 2.0,
+  "planner_margin": 3.0,
   "success": true
 }

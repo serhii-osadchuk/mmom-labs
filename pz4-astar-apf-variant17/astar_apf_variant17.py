@@ -1,5 +1,5 @@
 # Автор: Осадчук Сергій, аспірант 1 р. н., ЗУНУ (спец. G7), 2026
-# Практичне заняття 4: A* + APF для 3 дронів. Варіант 17.
+# Практичне заняття 4: A* + APF для 3 дронів. Варіант 17 (таблиця Prakt_4_2_var21.pdf).
 #
 # Основа - прототип викладача (Prakt_4_1General+++.pdf, див. original/astar_apf_original.py).
 # Класи AStarPlanner і Drone збережено; усі відмінності від прототипу позначено
@@ -7,22 +7,24 @@
 import heapq
 import numpy as np
 
-# === 0. ДАНІ ВАРІАНТА 17 (Prakt_4_2_var21+++.pdf, рядок 17) ===  [ВАРІАНТ]
-GRID_SIZE = (50, 50)
-OBSTACLES = [(22, 20, 6.0), (27, 30, 5.0), (14, 32, 4.5)]   # (x, y, R)
-STARTS = [[5.0, 8.0], [8.0, 45.0], [45.0, 8.0]]
-GOALS = [[45.0, 42.0], [42.0, 5.0], [8.0, 45.0]]
-R_SAFETY = 1.1          # необхідний запас безпеки від краю перешкоди, м
+# === 0. ДАНІ ВАРІАНТА 17 (Prakt_4_2_var21.pdf, рядок 17: «Обхід по великому радіусу») ===  [ВАРІАНТ]
+GRID_SIZE = (100, 100)
+OBSTACLES = [(50, 50, 20.0)]                 # (x, y, R)
+STARTS = [[5.0, 5.0], [5.0, 95.0], [95.0, 5.0]]
+GOALS = [[95.0, 95.0], [95.0, 5.0], [5.0, 95.0]]
+D_MIN = 2.0             # мінімально допустима відстань між дронами і до перешкод, м
 
 # === Параметри моделі (значення прототипу збережено) ===
 DT = 0.2                # крок за часом, с (як у прототипу)
 CAPTURE_RADIUS = 1.0    # радіус захоплення вейпоінта, м (у прототипу вшито в Drone.update)
-R_SAFE_DRONES = 2.5     # зона відштовхування між дронами, м (як у прототипу)
-K_REP = 3.0             # вага відштовхування (у прототипу вшита числом 3.0)
-# [ЗМІНА C2] A* раніше брав margin = r_safety; але через радіус захоплення вейпоінта (1.0 м)
+# [ЗМІНА C5] параметри відштовхування підібрано під d_min = 2.0 (розгортка: sensitivity.py)
+R_SAFE_DRONES = 4.5     # зона відштовхування між дронами, м (у прототипу 2.5)
+K_REP = 12.0            # вага відштовхування (у прототипу 3.0)
+K_RIGHT = 10.0          # [ЗМІНА C6] вага правила «правої руки» (у прототипу немає, тобто 0)
+# [ЗМІНА C2] A* раніше брав margin = d_min; але через радіус захоплення вейпоінта (1.0 м)
 # дрон зрізає кути і просідає до 1 м ближче до перешкоди, ніж проходить сітковий шлях.
-PLANNER_MARGIN = R_SAFETY + CAPTURE_RADIUS
-MAX_STEPS = 400         # [ЗМІНА C4] було steps = 250 (50 с); ліміт часу, виходимо раніше, коли всі прибули
+PLANNER_MARGIN = D_MIN + CAPTURE_RADIUS
+MAX_STEPS = 1500        # [ЗМІНА C4] було steps = 250 (50 с); ліміт часу, виходимо раніше, коли всі прибули
 
 
 # === 1. РЕАЛІЗАЦІЯ АЛГОРИТМУ A* ДЛЯ ГРІДУ ===
@@ -78,8 +80,8 @@ class AStarPlanner:
 
 # === 2. КЛАС ДРОНА З ЛОКАЛЬНИМ УНИКНЕННЯМ ===
 class Drone:
-    # [ЗМІНА C5] r_safe і k_rep стали параметрами конструктора (за замовчуванням - значення прототипу)
-    def __init__(self, drone_id, start, goal, path, r_safe=R_SAFE_DRONES, k_rep=K_REP):
+    # [ЗМІНА C5] r_safe, k_rep, k_right (нове) - параметри конструктора (раніше вшиті числами 2.5 і 3.0)
+    def __init__(self, drone_id, start, goal, path, r_safe=R_SAFE_DRONES, k_rep=K_REP, k_right=K_RIGHT):
         self.id = drone_id
         self.pos = np.array(start, dtype=float)
         self.goal = np.array(goal, dtype=float)
@@ -88,6 +90,7 @@ class Drone:
         self.v_max = 1.2
         self.r_safe = r_safe
         self.k_rep = k_rep
+        self.k_right = k_right
         self.history = [self.pos.copy()]
 
     def update(self, all_drones, dt=0.1):
@@ -110,6 +113,7 @@ class Drone:
 
         # Відштовхування від інших дронів
         f_repel = np.zeros(2)
+        f_right = np.zeros(2)
         for other in all_drones:
             if other.id == self.id:
                 continue
@@ -117,8 +121,13 @@ class Drone:
             dist = np.linalg.norm(diff)
             if 0 < dist < self.r_safe:
                 f_repel += (1.0 / dist - 1.0 / self.r_safe) * (diff / (dist**2)) * self.k_rep
+                # [ЗМІНА C6] правило «правої руки»: бічна складова - вектор до сусіда, повернутий на 90° за годинниковою
+                # стрілкою. Зустрічні дрони розходяться в різні боки і не застрягають у симетричному глухому куті.
+                if self.k_right and np.linalg.norm(other.pos - other.goal) >= 0.5:
+                    e = -diff / dist
+                    f_right += (1.0 / dist - 1.0 / self.r_safe) * np.array([e[1], -e[0]]) * self.k_right
 
-        v_total = v_pref + f_repel
+        v_total = v_pref + f_repel + f_right
         speed = np.linalg.norm(v_total)
         if speed > self.v_max:
             v_total = (v_total / speed) * self.v_max
@@ -127,17 +136,17 @@ class Drone:
 
 
 # === 3. СЦЕНАРІЙ, СИМУЛЯЦІЯ, ПОКАЗНИКИ ===
-def run_simulation(obstacles=OBSTACLES, starts=STARTS, goals=GOALS, r_safety=R_SAFETY,
+def run_simulation(obstacles=OBSTACLES, starts=STARTS, goals=GOALS, d_min=D_MIN,
                    planner_margin=None, dt=DT, max_steps=MAX_STEPS,
-                   r_safe=R_SAFE_DRONES, k_rep=K_REP, grid_size=GRID_SIZE):
+                   r_safe=R_SAFE_DRONES, k_rep=K_REP, k_right=K_RIGHT, grid_size=GRID_SIZE):
     """Повертає словник: дрони, час прибуття кожного, мінімуми відстаней, довжини A*-шляхів."""
     if planner_margin is None:
-        planner_margin = r_safety + CAPTURE_RADIUS
+        planner_margin = d_min + CAPTURE_RADIUS
     planner = AStarPlanner(grid_size, obstacles, planner_margin)
     drones = []
     for i in range(len(starts)):
         path = planner.plan(starts[i], goals[i])
-        drones.append(Drone(i + 1, starts[i], goals[i], path, r_safe=r_safe, k_rep=k_rep))
+        drones.append(Drone(i + 1, starts[i], goals[i], path, r_safe=r_safe, k_rep=k_rep, k_right=k_right))
 
     t_arrive = [None] * len(drones)
     for step in range(max_steps):
@@ -158,8 +167,8 @@ def run_simulation(obstacles=OBSTACLES, starts=STARTS, goals=GOALS, r_safety=R_S
     astar_len = [float(np.sum(np.linalg.norm(np.diff(d.path, axis=0), axis=1))) for d in drones]
     return {
         "drones": drones, "t_arrive": t_arrive,
-        "success": all(t is not None for t in t_arrive) and clearance >= r_safety,
+        "success": all(t is not None for t in t_arrive) and clearance >= d_min and pair >= d_min,
         "makespan": max((t for t in t_arrive if t is not None), default=None),
         "min_pair_m": pair, "min_clearance_m": clearance, "astar_len_m": astar_len,
-        "r_safety": r_safety, "obstacles": obstacles,
+        "d_min": d_min, "obstacles": obstacles,
     }
